@@ -1,36 +1,36 @@
-import cors from 'cors';
-import express from 'express';
-import { connectDB } from './config/db.js';
-import lessonRoutes from './routes/lessonRoutes.js';
-import orderRoutes from './routes/orderRoutes.js';
+import express from "express";
+import morgan from "morgan";
+import cors from "cors";
+import lessonRoutes from "./routes/lessonRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
+import { connectDB } from "./config/db-config.js";
 
 const app = express();
-const PORT =  process.env.PORT || 8080;
 
-// Log environment-specific details
-if (process.env.PORT) {
-  console.log('Running on AWS Elastic Beanstalk');
-} else {
-  console.log('Running locally on port', PORT);
-}
+// Middleware
+app.use(morgan("short")); // Logging
+app.use(express.json()); // Parse JSON bodies
+app.use(cors());
 
-//Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://sadikhyseni.github.io/LearnNest/',
-  optionsSuccessStatus: 200,
-}));
-app.use(express.json());
+// Connect to MongoDB
+connectDB();
 
-// Database connection
-(async () => {
-    await connectDB(); // Ensure DB is connected before starting server
-})();
+// Default route
+app.get("/", (req, res) => {
+  res.send("Welcome to the LearnNest Backend!");
+});
 
 // Routes
-app.use('/lessons', lessonRoutes);
-app.use('/orders', orderRoutes);
+app.use("/lessons", lessonRoutes);
+app.use("/orders", orderRoutes);
+
+// 404 route
+app.use((req, res) => {
+  res.status(404).send("Page not found!");
+});
 
 // Start server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server started on port: ${PORT}`);
+  console.log(`App running on port ${PORT}`);
 });

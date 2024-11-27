@@ -15,16 +15,7 @@ app.use(cors());
 
 // Serve static images
 const __dirname = path.resolve(); // Current directory path
-app.use("/images", (req, res, next) => {
-  const filePath = path.join(__dirname, "public/images", req.path);
-  fs.access(filePath, fs.constants.F_OK, (err) => {
-    if (err) {
-      res.status(404).send("Image not found");
-    } else {
-      res.sendFile(filePath);
-    }
-  });
-});
+app.use("/images", express.static(path.join(__dirname, "public/images")));
 
 
 // Connect to MongoDB

@@ -16,11 +16,16 @@ app.use(cors());
   await connectDB();
 })();
 
+
+// Health Check Route
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 // Default route
 app.get("/", (req, res) => {
   res.send("Welcome to the LearnNest Backend!");
 });
-
 // Routes
 
 // Get all lessons

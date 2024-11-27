@@ -1,6 +1,8 @@
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+import path from "path";
+import fs from "fs";
 import { collections, connectDB } from "./config/db-config.js";
 import { ObjectId } from "mongodb";
 
@@ -10,6 +12,20 @@ const app = express();
 app.use(morgan("short")); // Logging
 app.use(express.json()); // Parse JSON bodies
 app.use(cors());
+
+// Serve static images
+const __dirname = path.resolve(); // Current directory path
+app.use("/images", (req, res, next) => {
+  const filePath = path.join(__dirname, "public/images", req.path);
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      res.status(404).send("Image not found");
+    } else {
+      res.sendFile(filePath);
+    }
+  });
+});
+
 
 // Connect to MongoDB
 (async function initializeDB() {
@@ -32,10 +48,34 @@ app.get("/", (req, res) => {
 app.get("/lessons", async (req, res) => {
   try {
     const lessons = await collections.lessons.find().toArray();
-    res.status(200).json(lessons);
+    const lessonsWithImages = lessons.map((lesson) => ({
+      ...lesson,
+      image: `/images/${lesson.image || "default.jpg"}` // Use image or default if not provided
+    }));
+    res.status(200).json(lessonsWithImages);
   } catch (error) {
     console.error("Error fetching lessons:", error);
     res.status(500).send("Error fetching lessons");
+  }
+});
+
+app.get("/search", async (req, res) => {
+  const searchTerm = req.query.q;
+  if (!searchTerm) return res.status(400).send("Search term is required");
+  try {
+    const results = await collections.lessons
+      .find({
+        $or: [
+          { title: { $regex: searchTerm, $options: "i" } },
+          { location: { $regex: searchTerm, $options: "i" } },
+          { price: { $regex: searchTerm, $options: "i" } },
+          { availableInventory: { $regex: searchTerm, $options: "i" } },
+        ],
+      })
+      .toArray();
+    res.status(200).json(results);
+  } catch (error) {
+    res.status(500).send("Error performing search");
   }
 });
 

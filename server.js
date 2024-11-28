@@ -45,9 +45,7 @@ app.get("/lessons", async (req, res) => {
     const lessons = await collections.lessons.find().toArray();
 
     const lessonsWithImages = lessons.map((lesson) => ({
-      ...lesson,
-      // Use the `static` folder for serving images
-    image: `https://awslearnnest-env.eba-csemqgpy.eu-west-2.elasticbeanstalk.com/static/${lesson.image || "default.png"}`,
+      ...lesson
     }));
 
     res.status(200).json(lessonsWithImages);

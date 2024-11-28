@@ -1,28 +1,32 @@
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
-import path from "path";
-import fs from "fs";
 import { collections, connectDB } from "./config/db-config.js";
 import { ObjectId } from "mongodb";
-
+import path from "path";
+import { fileURLToPath } from "url";
 const app = express();
 
 // Middleware
 app.use(morgan("short")); // Logging
+
+// Resolve the __dirname and __filename
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Define the static path
+const staticPath = path.resolve("static");
+app.use("/static", express.static(staticPath));
+app.use(express.static(staticPath)); // Serve files from the 'static' folder
+
+
 app.use(express.json()); // Parse JSON bodies
 app.use(cors());
-
-// Serve static images
-const __dirname = path.resolve(); // Current directory path
-app.use("/images", express.static(path.join(__dirname, "public/images")));
-
 
 // Connect to MongoDB
 (async function initializeDB() {
   await connectDB();
 })();
-
 
 // Health Check Route
 app.get("/health", (req, res) => {
@@ -39,14 +43,17 @@ app.get("/", (req, res) => {
 app.get("/lessons", async (req, res) => {
   try {
     const lessons = await collections.lessons.find().toArray();
+
     const lessonsWithImages = lessons.map((lesson) => ({
       ...lesson,
-      image: lesson.image || "default.png",  // Use image or default if not provided
+      // Use the `static` folder for serving images
+      image: lesson.image ? `/static/${lesson.image}` : "/static/default.png",
     }));
+
     res.status(200).json(lessonsWithImages);
   } catch (error) {
     console.error("Error fetching lessons:", error);
-    res.status(500).send("Error fetching lessons");
+    res.status(500).json({ message: "Error fetching lessons" });
   }
 });
 
@@ -58,20 +65,14 @@ app.get("/search", async (req, res) => {
     return res.status(400).send("Search term is required");
   }
 
-  // Check if search term is numeric
   const isNumeric = !isNaN(Number(searchTerm));
 
   try {
     const query = {
       $or: [
-        { title: { $regex: searchTerm, $options: "i" } }, 
+        { title: { $regex: searchTerm, $options: "i" } },
         { location: { $regex: searchTerm, $options: "i" } },
-        ...(isNumeric
-          ? [
-              { price: Number(searchTerm) },
-              { availableInventory: Number(searchTerm) },
-            ]
-          : []),
+        ...(isNumeric ? [{ price: Number(searchTerm) }, { availableInventory: Number(searchTerm) }] : []),
       ],
     };
 
@@ -79,7 +80,7 @@ app.get("/search", async (req, res) => {
 
     const lessonsWithImages = lessons.map((lesson) => ({
       ...lesson,
-      image: `/images/${lesson.image || "default.png"}`,
+      image: lesson.image ? `/static/${lesson.image}` : "/static/default.png",
     }));
 
     res.status(200).json(lessonsWithImages);

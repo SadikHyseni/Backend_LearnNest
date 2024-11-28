@@ -50,22 +50,41 @@ app.get("/lessons", async (req, res) => {
   }
 });
 
+// Search Lessons
 app.get("/search", async (req, res) => {
   const searchTerm = req.query.q;
-  if (!searchTerm) return res.status(400).send("Search term is required");
+
+  if (!searchTerm || searchTerm.trim() === "") {
+    return res.status(400).send("Search term is required");
+  }
+
+  // Check if search term is numeric
+  const isNumeric = !isNaN(Number(searchTerm));
+
   try {
-    const results = await collections.lessons
-      .find({
-        $or: [
-          { title: { $regex: searchTerm, $options: "i" } },
-          { location: { $regex: searchTerm, $options: "i" } },
-          { price: { $regex: searchTerm, $options: "i" } },
-          { availableInventory: { $regex: searchTerm, $options: "i" } },
-        ],
-      })
-      .toArray();
-    res.status(200).json(results);
+    const query = {
+      $or: [
+        { title: { $regex: searchTerm, $options: "i" } }, 
+        { location: { $regex: searchTerm, $options: "i" } },
+        ...(isNumeric
+          ? [
+              { price: Number(searchTerm) },
+              { availableInventory: Number(searchTerm) },
+            ]
+          : []),
+      ],
+    };
+
+    const lessons = await collections.lessons.find(query).toArray();
+
+    const lessonsWithImages = lessons.map((lesson) => ({
+      ...lesson,
+      image: `/images/${lesson.image || "default.png"}`,
+    }));
+
+    res.status(200).json(lessonsWithImages);
   } catch (error) {
+    console.error("Error performing search:", error);
     res.status(500).send("Error performing search");
   }
 });

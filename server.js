@@ -47,7 +47,7 @@ app.get("/lessons", async (req, res) => {
     const lessonsWithImages = lessons.map((lesson) => ({
       ...lesson,
       // Use the `static` folder for serving images
-      image: lesson.image ? `/static/${lesson.image}` : "/static/default.png",
+    image: `https://awslearnnest-env.eba-csemqgpy.eu-west-2.elasticbeanstalk.com/static/${lesson.image || "default.png"}`,
     }));
 
     res.status(200).json(lessonsWithImages);
@@ -80,7 +80,7 @@ app.get("/search", async (req, res) => {
 
     const lessonsWithImages = lessons.map((lesson) => ({
       ...lesson,
-      image: lesson.image ? `/static/${lesson.image}` : "/static/default.png",
+     image: `https://awslearnnest-env.eba-csemqgpy.eu-west-2.elasticbeanstalk.com/static/${lesson.image || "default.png"}`,
     }));
 
     res.status(200).json(lessonsWithImages);

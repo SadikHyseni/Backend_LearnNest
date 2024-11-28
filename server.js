@@ -41,7 +41,7 @@ app.get("/lessons", async (req, res) => {
     const lessons = await collections.lessons.find().toArray();
     const lessonsWithImages = lessons.map((lesson) => ({
       ...lesson,
-      image: `/images/${lesson.image || "default.jpg"}` // Use image or default if not provided
+      image: lesson.image || "default.png",  // Use image or default if not provided
     }));
     res.status(200).json(lessonsWithImages);
   } catch (error) {

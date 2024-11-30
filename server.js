@@ -65,22 +65,27 @@ app.get("/search", async (req, res) => {
 
   const isNumeric = !isNaN(Number(searchTerm));
 
-  try {
+
+   try {
     const query = {
       $or: [
-        { title: { $regex: searchTerm, $options: "i" } },
+        { title: { $regex: searchTerm, $options: "i" } }, 
         { location: { $regex: searchTerm, $options: "i" } },
-        ...(isNumeric ? [{ price: Number(searchTerm) }, { availableInventory: Number(searchTerm) }] : []),
+        { description: { $regex: searchTerm, $options: "i" } },
+        { price: { $regex: searchTerm, $options: "i" } },
+        { availableInventory: { $regex: searchTerm, $options: "i" } },
       ],
     };
 
+
+
     const lessons = await collections.lessons.find(query).toArray();
 
-    const lessonsWithImages = lessons.map((lesson) => ({
+    const updatedlesssons = lessons.map((lesson) => ({
       ...lesson
     }));
 
-    res.status(200).json(lessonsWithImages);
+    res.status(200).json(updatedlesssons);
   } catch (error) {
     console.error("Error performing search:", error);
     res.status(500).send("Error performing search");

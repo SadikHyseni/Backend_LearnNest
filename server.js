@@ -4,22 +4,19 @@ import cors from "cors";
 import { collections, connectDB } from "./config/db-config.js";
 import { ObjectId } from "mongodb";
 import path from "path";
-import { fileURLToPath } from "url";
 const app = express();
 
 // Middleware
 app.use(morgan("short")); // Logging
-
-// Resolve the __dirname and __filename
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Define the static path
+app.use((req, res, next) => {
+  const currentDateTime = new Date();
+  console.log(`[${currentDateTime.toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+//static path
 const staticPath = path.resolve("static");
 app.use("/static", express.static(staticPath));
 app.use(express.static(staticPath)); // Serve files from the 'static' folder
-
-
 app.use(express.json()); // Parse JSON bodies
 app.use(cors());
 
@@ -45,7 +42,7 @@ app.get("/lessons", async (req, res) => {
     const lessons = await collections.lessons.find().toArray();
 
     const lessonsWithImages = lessons.map((lesson) => ({
-      ...lesson
+      ...lesson,
     }));
 
     res.status(200).json(lessonsWithImages);
@@ -65,11 +62,10 @@ app.get("/search", async (req, res) => {
 
   const isNumeric = !isNaN(Number(searchTerm));
 
-
-   try {
+  try {
     const query = {
       $or: [
-        { title: { $regex: searchTerm, $options: "i" } }, 
+        { title: { $regex: searchTerm, $options: "i" } },
         { location: { $regex: searchTerm, $options: "i" } },
         { description: { $regex: searchTerm, $options: "i" } },
         { price: { $regex: searchTerm, $options: "i" } },
@@ -77,12 +73,10 @@ app.get("/search", async (req, res) => {
       ],
     };
 
-
-
     const lessons = await collections.lessons.find(query).toArray();
 
     const updatedlesssons = lessons.map((lesson) => ({
-      ...lesson
+      ...lesson,
     }));
 
     res.status(200).json(updatedlesssons);
@@ -108,7 +102,12 @@ app.post("/orders", async (req, res) => {
   try {
     const order = req.body;
     const result = await collections.orders.insertOne(order);
-    res.status(201).json({ message: "Order created successfully", orderId: result.insertedId });
+    res
+      .status(201)
+      .json({
+        message: "Order created successfully",
+        orderId: result.insertedId,
+      });
   } catch (error) {
     console.error("Error creating order:", error);
     res.status(500).send("Error creating order");
@@ -140,9 +139,10 @@ app.put("/lessons/:id", async (req, res) => {
 // Delete a lesson
 app.delete("/lessons/:id", async (req, res) => {
   const { id } = req.params;
-
   try {
-    const result = await collections.lessons.deleteOne({ _id: new ObjectId(id) });
+    const result = await collections.lessons.deleteOne({
+      _id: new ObjectId(id),
+    });
 
     if (result.deletedCount === 0) {
       res.status(404).send("Lesson not found");

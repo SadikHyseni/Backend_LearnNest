@@ -12,7 +12,11 @@ const propertiesPath = path.resolve(__dirname, "db.properties");
 const properties = PropertiesReader(propertiesPath);
 
 // Build MongoDB connection string
-const uri = `${properties.get("db.prefix")}${encodeURIComponent(properties.get("db.user"))}:${encodeURIComponent(properties.get("db.pwd"))}${properties.get("db.dbUrl")}${properties.get("db.params")}`;
+const uri = `${properties.get("db.prefix")}${encodeURIComponent(
+  properties.get("db.user")
+)}:${encodeURIComponent(properties.get("db.pwd"))}${properties.get(
+  "db.dbUrl"
+)}${properties.get("db.params")}`;
 
 // Create a MongoDB Client
 export const client = new MongoClient(uri, { serverApi: ServerApiVersion.v1 });
